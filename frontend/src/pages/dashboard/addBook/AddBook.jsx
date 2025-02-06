@@ -41,6 +41,8 @@ const AddBook = () => {
         const file = e.target.files[0];
         if(file) {
             setimageFile(file);
+            console.log("Image data: ");
+            console.log(file);
             setimageFileName(file.name);
         }
     }

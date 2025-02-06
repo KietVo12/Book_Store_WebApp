@@ -1,5 +1,9 @@
+import getRootURL from "./getRootURL";
+
+
 function getImgUrl (name) {
-    return new URL(`../books/${name}`, import.meta.url)
+    console.log(import.meta.url);
+    return new URL(`src/assets/books/${name}`, getRootURL());
 }
 
 export {getImgUrl}
