@@ -4,6 +4,8 @@ import SelectField from './SelectField'
 import { useForm } from 'react-hook-form';
 import { useAddBookMutation } from '../../../redux/features/books/booksApi';
 import Swal from 'sweetalert2';
+import axios from 'axios';
+import { getRepoUrl } from '../../../utils/getRepoURL';
 
 const AddBook = () => {
     const { register, handleSubmit, formState: { errors }, reset } = useForm();
@@ -18,6 +20,10 @@ const AddBook = () => {
         }
         try {
             await addBook(newBookData).unwrap();
+            const formData = new FormData();
+            formData.append("upload", imageFile);
+            const imageFileNameWithoutExtension = imageFileName.substring(0, imageFileName.indexOf("."));
+            axios.post(getRepoUrl() + "/api/v1/images/" + imageFileNameWithoutExtension, formData);
             Swal.fire({
                 title: "Book added",
                 text: "Your book is uploaded successfully!",
@@ -41,8 +47,6 @@ const AddBook = () => {
         const file = e.target.files[0];
         if(file) {
             setimageFile(file);
-            console.log("Image data: ");
-            console.log(file);
             setimageFileName(file.name);
         }
     }

@@ -1,8 +1,6 @@
-import getRootURL from "./getRootURL";
-
-
+import { getRepoUrl } from "./getRepoURL";
 function getImgUrl (name) {
-    return new URL(`src/assets/books/${name}`, getRootURL());
+    return new URL(`images/${name}`, getRepoUrl(name));
 }
 
 export {getImgUrl}
