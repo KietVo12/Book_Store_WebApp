@@ -1,4 +1,4 @@
-const getBaseUrl = () => {
+function getBaseUrl() {
     return "http://localhost:5000"
 }
 

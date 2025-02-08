@@ -1,7 +1,9 @@
 import React from 'react'
 import { useDeleteBookMutation, useFetchAllBooksQuery } from '../../../redux/features/books/booksApi';
 import { Link, useNavigate } from 'react-router-dom';
-
+import axios from 'axios';
+import { getRepoUrl } from '../../../utils/getRepoURL';
+import getBaseUrl from '../../../utils/baseURL';
 const ManageBooks = () => {
     const navigate = useNavigate();
 
@@ -12,7 +14,9 @@ const ManageBooks = () => {
     // Handle deleting a book
     const handleDeleteBook = async (id) => {
         try {
+            const bookToDelete = await axios.get(getBaseUrl() + '/api/books/' + id);
             await deleteBook(id).unwrap();
+            axios.delete(getRepoUrl() + "/api/v1/images?fullName=" + bookToDelete.data.coverImage);
             alert('Book deleted successfully!');
             refetch();
 
