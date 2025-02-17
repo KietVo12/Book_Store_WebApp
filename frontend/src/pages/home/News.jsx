@@ -1,101 +1,169 @@
-import React from 'react'
-import { Swiper, SwiperSlide } from 'swiper/react';
+import React from "react";
+import axios from "axios";
 
-// Import Swiper styles
-import 'swiper/css';
-import 'swiper/css/pagination';
-import 'swiper/css/navigation';
-import { Pagination, Navigation } from 'swiper/modules';
+class News extends React.Component {
+  state = {
+    allArticles: [],      // Lưu trữ toàn bộ bài (ví dụ 20 bài)
+    displayArticles: [],  // 10 bài đang hiển thị
+    nextIndex: 0,
+    isLoading: true,
+    error: null
+  };
 
-import news1 from "../../assets/news/news-1.png"
-import news2 from "../../assets/news/news-2.png"
-import news3 from "../../assets/news/news-3.png"
-import news4 from "../../assets/news/news-4.png"
-import { Link } from 'react-router-dom';
+  componentDidMount() {
+    this.fetchArticles(20);
+    this.intervalId = setInterval(() => {this.fetchArticles(20);}, 86400000);
+  }
+  componentWillUnmount() {
+    // Xóa interval khi component unmount để tránh để lộ thông tin
+    clearInterval(this.intervalId);
+  }
+   fetchArticles = (count) => {
+    axios
+      .get(`https://newsapi.org/v2/everything?q=ai&language=vi&pageSize=${count}&apiKey=84c6ca56664f462ca58c69c955335dff`)
+      .then((response) => {
+        const raw = response.data.articles || [];
+        const allArticles = raw.map((article) => ({
+          title: article.title,
+          url: article.url,
+          urlToImage: article.urlToImage,
+          date: article.publishedAt,
+          description: article.description
+        }));
+        // Lấy 10 bài viết đầu tiên (có thể điều chỉnh)
+        const displayArticles = allArticles.slice(0, 10);
+        const nextIndex = displayArticles.length;
+        this.setState({
+          allArticles,
+          displayArticles,
+          nextIndex,
+          isLoading: false,
+          error: null
+        });
+      })
+      .catch((error) => {
+        this.setState({ error, isLoading: false });
+      });
+  };
+    // Hàm xóa 1 bài viết khỏi danh sách
+    handleDelete = (index) => {
+      this.setState((prevState) => {
+        const { displayArticles, allArticles, nextIndex } = prevState;
+        const newDisplay = [...displayArticles];
+        newDisplay.splice(index, 1);
 
-const news = [
-    {
-        "id": 1,
-        "title": "Global Climate Summit Calls for Urgent Action",
-        "description": "World leaders gather at the Global Climate Summit to discuss urgent strategies to combat climate change, focusing on reducing carbon emissions and fostering renewable energy solutions.",
-        "image": news1
-    },
-    {
-        "id": 2,
-        "title": "Breakthrough in AI Technology Announced",
-        "description": "A major breakthrough in artificial intelligence has been announced by researchers, with new advancements promising to revolutionize industries from healthcare to finance.",
-        "image": news2
-    },
-    {
-        "id": 3,
-        "title": "New Space Mission Aims to Explore Distant Galaxies",
-        "description": "NASA has unveiled plans for a new space mission that will aim to explore distant galaxies, with hopes of uncovering insights into the origins of the universe.",
-        "image": news3
-    },
-    {
-        "id": 4,
-        "title": "Stock Markets Reach Record Highs Amid Economic Recovery",
-        "description": "Global stock markets have reached record highs as signs of economic recovery continue to emerge following the challenges posed by the global pandemic.",
-        "image": news4
-    },
-    {
-        "id": 5,
-        "title": "Innovative New Smartphone Released by Leading Tech Company",
-        "description": "A leading tech company has released its latest smartphone model, featuring cutting-edge technology, improved battery life, and a sleek new design.",
-        "image": news2
-    }
-]
-
-const News = () => {
-  return (
-    <div className='py-16'>
-        <h2 className='text-3xl font-semibold mb-6'>News </h2>
-
-        <Swiper
-        slidesPerView={1}
-        spaceBetween={30}
-        navigation={true}
-        breakpoints={{
-          640: {
-            slidesPerView: 1,
-            spaceBetween: 20,
-          },
-          768: {
-            slidesPerView: 2,
-            spaceBetween: 40,
-          },
-          1024: {
-            slidesPerView: 2,
-            spaceBetween: 50,
-          },
-        }}
-        modules={[Pagination, Navigation]}
-        className="mySwiper"
-      >
-        
-        {
-            news.map((item, index) => (
-                <SwiperSlide key={index}>
-                    <div className='flex flex-col sm:flex-row sm:justify-between items-center gap-12'>
-                        {/* content */}
-                        <div className='py-4'>
-                            <Link to="/">
-                                 <h3 className='text-lg font-medium hover:text-blue-500 mb-4'>{item.title}</h3>
-                            </Link>
-                            <div className='w-12 h-[4px] bg-primary mb-5'></div>
-                            <p className='text-sm text-gray-600'>{item.description}</p>
-                        </div>
-
-                        <div className='flex-shrink-0'>
-                            <img src={item.image} alt=""  className='w-full object-cover'/>
-                        </div>
-                    </div>
-                </SwiperSlide>
-            ) )
+        let newNextIndex = nextIndex;
+        // Nếu còn bài trong allArticles, đẩy 1 bài vào display
+        if (newNextIndex < allArticles.length) {
+        newDisplay.push(allArticles[newNextIndex]);
+        newNextIndex++;
         }
-      </Swiper>
-    </div>
-  )
-}
 
-export default News
+        return {
+          displayArticles: newDisplay,
+          nextIndex: newNextIndex
+        };
+      });
+    };
+
+    // Hàm Thêm tin => Lấy thêm 10 bài mới, nối vào allArticles
+    handleAddNews = () => {
+        this.setState({ isLoading: true });
+        axios
+        .get(`https://newsapi.org/v2/everything?q=ai&language=vi&pageSize=10&apiKey=84c6ca56664f462ca58c69c955335dff`)
+        .then((response) => {
+          const newArticles = response.data.articles.map((article) => ({
+            title: article.title,
+            url: article.url,
+            urlToImage: article.urlToImage,
+            date: article.publishedAt,
+            description: article.description
+          }));
+        // Nối thêm
+        this.setState((prevState) => {
+          const merged = [...prevState.allArticles, ...newArticles];
+          return {
+            allArticles: merged,
+            isLoading: false
+          };
+        });
+      })
+      .catch((error) => {
+        this.setState({ error, isLoading: false });
+      });
+  };
+  render() {
+    const { displayArticles, isLoading, error } = this.state;
+
+    if (error) {
+      return <p className="text-red-500 font-semibold">Error: {error.message}</p>;
+    }
+    if (isLoading) {
+      return <p>Loading...</p>;
+    }
+
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h2 className="text-2xl font-bold mb-6">News</h2>
+        {/* Nút thêm tin (phòng khi bạn muốn nạp thêm dữ liệu) */}
+        <div className="mb-4">
+          <button
+            onClick={this.handleAddNews}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Thêm tin
+          </button>
+        </div>
+        {/*
+          - Dùng overflow-x-auto để cho phép cuộn ngang khi nội dung quá rộng
+        */}
+        <div className="overflow-x-auto">
+          <div className="flex w-[72rem] space-x-4">
+            {displayArticles.map((article, index) => (
+              <div
+                key={index}
+                className="flex-none w-72 bg-white shadow-md rounded-md overflow-hidden"
+              >
+                {/* Ảnh có link đến bài viết */}
+                <a href={article.url} target="_blank" rel="noopener noreferrer">
+                {article.urlToImage && (
+                  <img
+                    src={article.urlToImage}
+                    alt={article.title}
+                    className="w-full h-48 object-cover"
+                  />
+                )}
+                </a>
+                {/* Nội dung card */}
+                <div className="p-4 flex flex-col">
+                {/* Tiêu đề có link */}
+                  <a
+                    href={article.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                      {article.title}
+                    </h3>
+                  </a>
+                  <p className="text-sm text-gray-500 mb-2">{article.date}</p>
+                  <p className="text-sm text-gray-700 mb-4 line-clamp-3">
+                    {article.description || "No description available"}
+                  </p>
+                {/* Nút Xóa */}
+                  <button
+                    onClick={() => this.handleDelete(index)}
+                    className="mt-auto bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"> 
+                     Xóa
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+export default News;

@@ -99,12 +99,11 @@ const searchByTitle = async (req, res) => {
                 match: {
                     title: {
                         query: title,
-                        fuzziness: 2
+                        fuzziness: "AUTO"
                     }
                 }
             }
         });
-        console.log(books);
         res.status(200).send(books.hits.hits.map((hit) => hit._source));
     } catch (error) {
         console.error("Error searching for books", error);

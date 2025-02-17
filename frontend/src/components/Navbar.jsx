@@ -1,107 +1,164 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { HiMiniBars3CenterLeft, HiOutlineHeart, HiOutlineShoppingCart } from "react-icons/hi2";
 import { IoSearchOutline } from "react-icons/io5";
 import { HiOutlineUser } from "react-icons/hi";
-
-import avatarImg from "../assets/avatar.png"
-import { useState } from "react";
+import axios from 'axios';
+import avatarImg from "../assets/avatar.png";
 import { useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext";
-
+import getBaseUrl from "../utils/baseURL";
 const navigation = [
-    {name: "Dashboard", href:"/user-dashboard"},
-    {name: "Orders", href:"/orders"},
-    {name: "Cart Page", href:"/cart"},
-    {name: "Check Out", href:"/checkout"},
-]
+  { name: "Dashboard", href: "/user-dashboard" },
+  { name: "Orders", href: "/orders" },
+  { name: "Cart Page", href: "/cart" },
+  { name: "Check Out", href: "/checkout" },
+];
 
 const Navbar = () => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");       // <-- State lưu nội dung search
+  const [searchResults, setSearchResults] = useState([]); // <-- State lưu kết quả trả về
 
-    const  [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const cartItems = useSelector(state => state.cart.cartItems);
-   
-    const {currentUser, logout} = useAuth()
-    
-    const handleLogOut = () => {
-        logout()
+  const cartItems = useSelector((state) => state.cart.cartItems);
+
+  const { currentUser, logout } = useAuth();
+
+  const handleLogOut = () => {
+    logout();
+  };
+
+  const token = localStorage.getItem("token");
+
+  // Hàm gọi API để tìm kiếm
+  const fetchSearchResults = async (query) => {
+    try {
+      const response = await axios.post(getBaseUrl() + "/api/books/search?title=" + query);
+      console.log(response.data);
+      setSearchResults(response.data);
+    } catch (error) {
+      setSearchResults([]);
     }
+  };
 
-    const token = localStorage.getItem('token');
-  
-    return (
-        <header className="max-w-screen-2xl mx-auto px-4 py-6">
-            <nav className="flex justify-between items-center">
-                {/* left side */}
-                <div className="flex items-center md:gap-16 gap-4">
-                    <Link to="/">
-                        <HiMiniBars3CenterLeft className="size-6" />
-                    </Link>
+  // Mỗi khi searchTerm thay đổi, ta gọi API mới
+  useEffect(() => {
+    if (searchTerm.trim() !== "") {
+      fetchSearchResults(searchTerm);
+    } else {
+      // Nếu input trống, bạn có thể reset hoặc không tuỳ ý
+      setSearchResults([]);
+    }
+  }, [searchTerm]);
 
-                    {/* search input */}
-                    <div className="relative sm:w-72 w-40 space-x-2">
+  // Xử lý khi user nhập input
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
 
-                        <IoSearchOutline className="absolute inline-block left-3 inset-y-2" />
+  return (
+    <header className="max-w-screen-2xl mx-auto px-4 py-6">
+      <nav className="flex justify-between items-center">
+        {/* left side */}
+        <div className="flex items-center md:gap-16 gap-4">
+          <Link to="/">
+            <HiMiniBars3CenterLeft className="size-6" />
+          </Link>
 
-                        <input type="text" placeholder="Search here"
-                            className="bg-[#EAEAEA] w-full py-1 md:px-8 px-6 rounded-md focus:outline-none"
-                        />
-                    </div>
-                </div>
+          {/* search input */}
+          <div className="relative sm:w-72 w-40 space-x-2">
+            <IoSearchOutline className="absolute inline-block left-3 inset-y-2" />
+            <input
+              type="text"
+              placeholder="Search here"
+              className="bg-[#EAEAEA] w-full py-1 md:px-8 px-6 rounded-md focus:outline-none"
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+            {/* 
+              Optionally: Hiển thị danh sách gợi ý hoặc kết quả ở đây 
+              (nếu bạn muốn hiển thị ngay dưới ô input)
+            */}
+            {searchResults.length > 0 && (
+              <div className="absolute left-0 top-full bg-white shadow-md w-full mt-1 z-50">
+                {searchResults.map((item, idx) => (
+                  <div key={idx} className="p-2 border-b hover:bg-gray-100">
+                    <Link to={`/books/${item.id}`}>{item.title}</Link>
+                    {/* tùy field mà bạn muốn hiển thị */}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
+        {/* rigth side */}
+        <div className="relative flex items-center md:space-x-3 space-x-2">
+          <div>
+            {currentUser ? (
+              <>
+                <button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                  <img
+                    src={avatarImg}
+                    alt=""
+                    className={`size-7 rounded-full ${
+                      currentUser ? "ring-2 ring-blue-500" : ""
+                    }`}
+                  />
+                </button>
+                {/* show dropdowns */}
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-40">
+                    <ul className="py-2">
+                      {navigation.map((item) => (
+                        <li key={item.name} onClick={() => setIsDropdownOpen(false)}>
+                          <Link
+                            to={item.href}
+                            className="block px-4 py-2 text-sm hover:bg-gray-100"
+                          >
+                            {item.name}
+                          </Link>
+                        </li>
+                      ))}
+                      <li>
+                        <button
+                          onClick={handleLogOut}
+                          className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                        >
+                          Logout
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </>
+            ) : token ? (
+              <Link to="/dashboard" className="border-b-2 border-primary">
+                Dashboard
+              </Link>
+            ) : (
+              <Link to="/login">
+                <HiOutlineUser className="size-6" />
+              </Link>
+            )}
+          </div>
 
-                {/* rigth side */}
-                <div className="relative flex items-center md:space-x-3 space-x-2">
-                    <div >
-                        {
-                            currentUser ? <>
-                            <button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
-                                <img src={avatarImg} alt="" className={`size-7 rounded-full ${currentUser ? 'ring-2 ring-blue-500' : ''}`} />
-                            </button>
-                            {/* show dropdowns */}
-                            {
-                                isDropdownOpen && (
-                                    <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md z-40">
-                                        <ul className="py-2">
-                                            {
-                                                navigation.map((item) => (
-                                                    <li key={item.name} onClick={() => setIsDropdownOpen(false)}>
-                                                        <Link to={item.href} className="block px-4 py-2 text-sm hover:bg-gray-100">
-                                                            {item.name}
-                                                        </Link>
-                                                    </li>
-                                                ))
-                                            }
-                                            <li>
-                                                <button
-                                                onClick={handleLogOut}
-                                                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100">Logout</button>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                )
-                            }
-                            </> : token ?  <Link to="/dashboard" className='border-b-2 border-primary'>Dashboard</Link> : (
-                                <Link to="/login"> <HiOutlineUser className="size-6" /></Link>
-                            )
-                        }
-                    </div>
-                    
-                    <button className="hidden sm:block">
-                        <HiOutlineHeart className="size-6" />
-                    </button>
+          <button className="hidden sm:block">
+            <HiOutlineHeart className="size-6" />
+          </button>
 
-                    <Link to="/cart" className="bg-primary p-1 sm:px-6 px-2 flex items-center rounded-sm">
-                        <HiOutlineShoppingCart className='' />
-                        {
-                            cartItems.length > 0 ?  <span className="text-sm font-semibold sm:ml-1">{cartItems.length}</span> :  <span className="text-sm font-semibold sm:ml-1">0</span>
-                        }
-                        
-                       
-                    </Link>
-                </div>
-            </nav>
-        </header>
-    )
-}
+          <Link to="/cart" className="bg-primary p-1 sm:px-6 px-2 flex items-center rounded-sm">
+            <HiOutlineShoppingCart />
+            {cartItems.length > 0 ? (
+              <span className="text-sm font-semibold sm:ml-1">{cartItems.length}</span>
+            ) : (
+              <span className="text-sm font-semibold sm:ml-1">0</span>
+            )}
+          </Link>
+        </div>
+      </nav>
+    </header>
+  );
+};
 
 export default Navbar;
