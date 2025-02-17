@@ -20,7 +20,7 @@ class News extends React.Component {
   }
    fetchArticles = (count) => {
     axios
-      .get(`https://newsapi.org/v2/everything?q=ai&language=vi&pageSize=${count}&apiKey=84c6ca56664f462ca58c69c955335dff`)
+      .get(`https://newsapi.org/v2/everything?q=AI và công nghệ&language=vi&pageSize=${count}&apiKey=84c6ca56664f462ca58c69c955335dff`)
       .then((response) => {
         const raw = response.data.articles || [];
         const allArticles = raw.map((article) => ({
@@ -70,7 +70,7 @@ class News extends React.Component {
     handleAddNews = () => {
         this.setState({ isLoading: true });
         axios
-        .get(`https://newsapi.org/v2/everything?q=ai&language=vi&pageSize=10&apiKey=84c6ca56664f462ca58c69c955335dff`)
+        .get(`https://newsapi.org/v2/everything?q=AI và công nghệ&language=vi&pageSize=10&apiKey=84c6ca56664f462ca58c69c955335dff`)
         .then((response) => {
           const newArticles = response.data.articles.map((article) => ({
             title: article.title,
