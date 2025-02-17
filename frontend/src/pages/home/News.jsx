@@ -114,9 +114,7 @@ class News extends React.Component {
             Thêm tin
           </button>
         </div>
-        {/*
-          - Dùng overflow-x-auto để cho phép cuộn ngang khi nội dung quá rộng
-        */}
+        {/*Dùng overflow-x-auto để cho phép cuộn ngang khi nội dung quá rộng*/}
         <div className="overflow-x-auto">
           <div className="flex w-[72rem] space-x-4">
             {displayArticles.map((article, index) => (
