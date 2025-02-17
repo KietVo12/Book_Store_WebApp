@@ -7,11 +7,14 @@ class News extends React.Component {
     displayArticles: [],  // 10 bài đang hiển thị
     nextIndex: 0,
     isLoading: true,
-    error: null
+    error: null,
+    page: 2,
+    pageSize: 20
   };
 
   componentDidMount() {
-    this.fetchArticles(20);
+    this.fetchArticles(20);//Page Size set for 20
+    console.log("call after render");
     this.intervalId = setInterval(() => {this.fetchArticles(20);}, 86400000);
   }
   componentWillUnmount() {
@@ -38,7 +41,8 @@ class News extends React.Component {
           displayArticles,
           nextIndex,
           isLoading: false,
-          error: null
+          error: null,
+          pageSize: count
         });
       })
       .catch((error) => {
@@ -65,39 +69,70 @@ class News extends React.Component {
         };
       });
     };
-
+    fetct
     // Hàm Thêm tin => Lấy thêm 10 bài mới, nối vào allArticles
+    async fetchMoreArticles(page, pageSize) {
+      try {
+        const response = await axios.get(`https://newsapi.org/v2/everything?q=ai&language=vi&pageSize=${pageSize}&page=${page}&apiKey=84c6ca56664f462ca58c69c955335dff`);
+        return response.data;
+      } catch (error) {
+        this.setState({ error, isLoading: false });
+      }
+        
+    }
     handleAddNews = () => {
         this.setState({ isLoading: true });
-        axios
-        .get(`https://newsapi.org/v2/everything?q=ai&language=vi&pageSize=10&apiKey=84c6ca56664f462ca58c69c955335dff`)
-        .then((response) => {
-          const newArticles = response.data.articles.map((article) => ({
-            title: article.title,
-            url: article.url,
-            urlToImage: article.urlToImage,
-            date: article.publishedAt,
-            description: article.description
-          }));
-        // Nối thêm
-        this.setState((prevState) => {
-          const merged = [...prevState.allArticles, ...newArticles];
-          return {
-            allArticles: merged,
+        const pageSize = this.state.pageSize;
+        const currentPage = this.state.page;
+        const currentIndex = this.state.nextIndex;
+        const currentAllArticlesLength = this.state.allArticles.length;
+        // Check 
+        console.log(currentIndex);
+        if(currentIndex >= currentAllArticlesLength) {
+          // fetch more
+          this.fetchMoreArticles(currentPage, pageSize).then((data) => {
+            const newArticles = data.articles.map((article) => ({
+              title: article.title,
+              url: article.url,
+              urlToImage: article.urlToImage,
+              date: article.publishedAt,
+              description: article.description
+            }));
+            // Nối thêm
+            console.log("Articles to add");
+            console.log(newArticles);
+            console.log("Call this");
+            this.setState((prevState) => {
+              const currentDisplayArticles = this.state.displayArticles;
+              const merged = [...prevState.allArticles, ...newArticles];
+              return {
+                allArticles: merged,
+                displayArticles: [...currentDisplayArticles,...newArticles],
+                nextIndex: currentIndex + 10,
+                isLoading: false,
+                page: this.state.page + 1
+              };
+            });
+          }).catch(error => {
+            console.error("Error fetching more articles", error);
+            this.setState({ error, isLoading: false });
+          });
+        }
+        else {
+          console.log("Lazy loading articles");
+          const newArticles = this.state.allArticles.slice(currentIndex, currentAllArticlesLength)
+          console.log(newArticles);
+          const currentDisplayArticles = this.state.displayArticles;
+          this.setState({
+            displayArticles: [...currentDisplayArticles,...newArticles],
+            nextIndex: currentIndex + newArticles.length,
             isLoading: false
-          };
-        });
-      })
-      .catch((error) => {
-        this.setState({ error, isLoading: false });
-      });
+          })
+        }
   };
   render() {
     const { displayArticles, isLoading, error } = this.state;
 
-    if (error) {
-      return <p className="text-red-500 font-semibold">Error: {error.message}</p>;
-    }
     if (isLoading) {
       return <p>Loading...</p>;
     }
@@ -114,6 +149,13 @@ class News extends React.Component {
             Thêm tin
           </button>
         </div>
+        <div>
+          { error ? (
+              <p className="text-red-500 font-semibold">Các bài viết hiện không khả dụng vui lòng đợi cập nhật thêm</p>
+            ) : <></>
+          }
+        </div>
+        
         {/*Dùng overflow-x-auto để cho phép cuộn ngang khi nội dung quá rộng*/}
         <div className="overflow-x-auto">
           <div className="flex w-[72rem] space-x-4">
